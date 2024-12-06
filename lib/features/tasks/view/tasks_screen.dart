@@ -26,6 +26,7 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void initState() {
     _taskBloc.add(LoadTasks());
+    _overdueCheck();
     super.initState();
   }
 
@@ -96,45 +97,72 @@ class _TasksScreenState extends State<TasksScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
+            child: // Внутри Row, где находятся кнопки и фильтры
+                Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () => context.go("/task_filters"),
-                  style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(),
+                // Выпадающий список для сортировки
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    setState(() {
+                      _taskBloc.add(
+                          LoadTasks(filter: value)); // Добавляем событие в Bloc
+                    });
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      value: 'name',
+                      child: Text('Sort by Name'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'time_left',
+                      child: Text('Sort by Time Left'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'creation_date',
+                      child: Text('Sort by Creation Date'),
+                    ),
+                  ],
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color.fromRGBO(153, 159, 249, 1), // purp
+                    ),
                     padding: const EdgeInsets.all(16),
-                    backgroundColor:
-                        const Color.fromRGBO(153, 159, 249, 1), // purp
-                  ),
-                  child: const Icon(
-                    Icons.filter_alt,
-                    color: Colors.white,
+                    child: const Icon(
+                      Icons.filter_alt,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-                const SizedBox(
-                  height: 0,
-                  width: 30,
+                const SizedBox(width: 30),
+                // Фильтр по статусу задач
+                FilterStatusMenu(
+                  onFilterChanged: (selectedStatuses) {
+                    _taskBloc
+                        .add(LoadTasksByStatus(statuses: selectedStatuses));
+                  },
                 ),
+                const SizedBox(width: 30),
+                // Кнопка предупреждений
                 ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(),
-                    padding: const EdgeInsets.all(16),
-                    backgroundColor:
-                      const Color.fromRGBO(153, 159, 249, 1), // purp
-                  ),
-                  child: const Icon(
-                    Icons.remove_red_eye,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(
-                  height: 0,
-                  width: 30,
-                ),
-                ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    final overdueTasks = taskList
+                            ?.where(
+                                (task) => task.status == TaskStatus.overdued)
+                            .length ??
+                        0;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'You have $overdueTasks overdued tasks',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(16),
@@ -335,6 +363,25 @@ class _TasksScreenState extends State<TasksScreen> {
           .go('/task_details', extra: task); // Переход с данными таски
     } else {
       log('Task not found');
+    }
+  }
+
+  void _overdueCheck() {
+    final now = DateTime.now(); // Текущее время
+    if (taskList != null) {
+      for (var task in taskList!) {
+        if (task.endDate.isBefore(now) && task.status != TaskStatus.overdued) {
+          final updatedTask = Task(
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            status: TaskStatus.overdued,
+          );
+          GetIt.I<AbstractTasksRepository>().updateTask(updatedTask);
+        }
+      }
     }
   }
 }

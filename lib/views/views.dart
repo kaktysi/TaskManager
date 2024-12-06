@@ -7,7 +7,6 @@ import '../features/noticifications/noticifications.dart';
 import '../features/registration/register_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/task_add/task_add.dart';
-import '../features/task_filters/task_filters.dart';
 import '../features/tasks/tasks.dart';
 import '../repositories/tasks/tasks.dart';
 
@@ -36,12 +35,6 @@ final GoRouter router = GoRouter(
       path: '/task_add',
       builder: (context, state) {
         return const TaskAddScreen();
-      },
-    ),
-    GoRoute(
-      path: '/task_filters',
-      builder: (context, state) {
-        return const TaskFiltersScreen();
       },
     ),
     GoRoute(

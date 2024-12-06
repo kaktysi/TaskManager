@@ -26,7 +26,7 @@ class _TaskAddScreenState extends State<TaskAddScreen> {
     final selectedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
 
@@ -41,6 +41,36 @@ class _TaskAddScreenState extends State<TaskAddScreen> {
     }
   }
 
+  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
+  final selectedTime = await showTimePicker(
+    context: context,
+    initialTime: TimeOfDay.now(),
+  );
+
+  if (selectedTime != null) {
+    setState(() {
+      if (isStartTime) {
+        _startDate = DateTime(
+          _startDate?.year ?? DateTime.now().year,
+          _startDate?.month ?? DateTime.now().month,
+          _startDate?.day ?? DateTime.now().day,
+          selectedTime.hour,
+          selectedTime.minute,
+        );
+      } else {
+        _endDate = DateTime(
+          _endDate?.year ?? DateTime.now().year,
+          _endDate?.month ?? DateTime.now().month,
+          _endDate?.day ?? DateTime.now().day,
+          selectedTime.hour,
+          selectedTime.minute,
+        );
+      }
+    });
+  }
+}
+
+
   /// Сохранение задачи
   void _saveTask() {
     if (_formKey.currentState?.validate() == true) {
@@ -48,7 +78,7 @@ class _TaskAddScreenState extends State<TaskAddScreen> {
 
       if (_startDate != null && _endDate != null) {
         final newTask = Task(
-          id: '', // Firestore сгенерирует ID
+          id: '', 
           title: _title!,
           description: _description!,
           startDate: _startDate!,
@@ -117,7 +147,10 @@ class _TaskAddScreenState extends State<TaskAddScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(153, 159, 249, 1),
                     ),
-                    onPressed: () => _selectDate(context, true),
+                    onPressed: () {
+                      _selectTime(context, true);
+                      _selectDate(context, false);
+                    },
                     child: const Text('Select'),
                   ),
                 ],
@@ -133,7 +166,10 @@ class _TaskAddScreenState extends State<TaskAddScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromRGBO(153, 159, 249, 1),
                     ),
-                    onPressed: () => _selectDate(context, false),
+                    onPressed: () {
+                      _selectTime(context, true);
+                      _selectDate(context, false);
+                    },
                     child: const Text('Select'),
                   ),
                 ],

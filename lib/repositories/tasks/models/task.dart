@@ -1,8 +1,4 @@
-enum TaskStatus {
-  inProcess,
-  completed,
-  overdued,
-}
+import 'package:task_manager/repositories/tasks/tasks.dart';
 
 class Task {
   final String id;
@@ -28,7 +24,8 @@ class Task {
       description: data['description'] as String,
       startDate: DateTime.parse(data['startDate'] as String),
       endDate: DateTime.parse(data['endDate'] as String),
-      status: TaskStatus.values.byName(data['status'] as String), // Преобразование строки в TaskStatus
+      status: TaskStatus.values.byName(
+          data['status'] as String), // Преобразование строки в TaskStatus
     );
   }
 
@@ -43,11 +40,10 @@ class Task {
   }
 
   TaskStatus determineStatus(DateTime now) {
-  if (now.isAfter(endDate)) {
-    return TaskStatus.overdued;
-  } else {
-    return status;
+    if (now.isAfter(endDate)) {
+      return TaskStatus.overdued;
+    } else {
+      return status;
+    }
   }
-}
-
 }
