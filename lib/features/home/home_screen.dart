@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../noticifications/noticifications.dart';
+import '../notifications/noticifications.dart';
 import '../tasks/tasks.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _selectedIndex,
         children: const [
           TasksScreen(),
-          NoticificationsScreen(),
+          NotificationScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

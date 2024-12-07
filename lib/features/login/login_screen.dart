@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Для SharedPreferences
 
+/// Экран входа
+/// Этот экран позволяет пользователю войти в систему с использованием email и пароля.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -11,8 +13,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(); // Контроллер для поля email
+  final _passwordController = TextEditingController(); // Контроллер для поля пароля
   final _formKey = GlobalKey<FormState>(); // Ключ для формы
 
   @override
@@ -22,9 +24,12 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Метод для входа в систему
+  /// После успешного входа сохраняется состояние авторизации и происходит переход на экран задач.
   Future<void> _signIn() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) { // Проверка валидности формы
       try {
+        // Вход пользователя с помощью email и пароля
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -33,10 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true); // Сохранение флага авторизации
 
+        // Перенаправление на экран задач после успешного входа
         if (mounted) {
           context.go("/tasks");
         }
       } on FirebaseAuthException catch (e) {
+        // В случае ошибки входа выводим сообщение об ошибке
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -52,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: const Color.fromRGBO(129, 170, 245, 1), // фиолетовый фон
+        color: const Color.fromRGBO(129, 170, 245, 1), // Фиолетовый фон
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(16.0),
@@ -62,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(16.0), // Закругление углов
             ),
             child: Form(
-              key: _formKey, // Форме присваиваем ключ
+              key: _formKey, // Привязка ключа к форме
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -71,15 +78,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(129, 170, 245, 1), // Голубой
+                      color: Color.fromRGBO(129, 170, 245, 1), // Голубой цвет заголовка
                     ),
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    controller: _emailController,
+                    controller: _emailController, // Контроллер для поля email
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
+                      // Валидатор для поля email
                       if (value == null || value.isEmpty) {
                         return 'Пожалуйста, введите email';
                       }
@@ -88,10 +96,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
-                    controller: _passwordController,
+                    controller: _passwordController, // Контроллер для поля пароля
                     decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
+                    obscureText: true, // Скрытие ввода пароля
                     validator: (value) {
+                      // Валидатор для поля пароля
                       if (value == null || value.isEmpty) {
                         return 'Пожалуйста, введите пароль';
                       }
@@ -100,29 +109,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {
-                      _signIn();
-                    },
+                    onPressed: _signIn, // Вход с помощью метода _signIn
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color.fromRGBO(239, 147, 162, 1), // Красный
+                      backgroundColor: const Color.fromRGBO(239, 147, 162, 1), // Красный цвет кнопки
                     ),
                     child: const Text(
                       'Sign In',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.white, // Белый текст на кнопке
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
-                    onTap: () => context
-                        .go('/register'), // Переброс на экран регистрации
+                    onTap: () => context.go('/register'), // Перенаправление на экран регистрации
                     child: const Text(
                       'Not registered yet? Sign Up',
                       style: TextStyle(
-                        color: Color.fromRGBO(129, 170, 245, 1), // Голубой
-                        decoration: TextDecoration.underline,
+                        color: Color.fromRGBO(129, 170, 245, 1), // Голубой цвет текста
+                        decoration: TextDecoration.underline, // Подчеркивание текста
                       ),
                     ),
                   ),

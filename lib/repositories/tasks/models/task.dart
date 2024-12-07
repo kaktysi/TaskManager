@@ -1,13 +1,33 @@
 import 'package:task_manager/repositories/tasks/tasks.dart';
 
+/// Класс, представляющий задачу в системе.
 class Task {
+  /// Уникальный идентификатор задачи.
   final String id;
+
+  /// Название задачи.
   final String title;
+
+  /// Описание задачи.
   final String description;
+
+  /// Дата и время начала выполнения задачи.
   final DateTime startDate;
+
+  /// Дата и время завершения задачи.
   final DateTime endDate;
+
+  /// Статус задачи, по умолчанию - в процессе.
   final TaskStatus status;
 
+  /// Конструктор для создания объекта задачи.
+  /// 
+  /// [id] - уникальный идентификатор задачи.
+  /// [title] - название задачи.
+  /// [description] - описание задачи.
+  /// [startDate] - дата и время начала выполнения задачи.
+  /// [endDate] - дата и время завершения задачи.
+  /// [status] - статус задачи, по умолчанию `TaskStatus.inProcess`.
   Task({
     required this.id,
     required this.title,
@@ -17,6 +37,12 @@ class Task {
     this.status = TaskStatus.inProcess,
   });
 
+  /// Создаёт задачу из данных, полученных из Firestore.
+  /// 
+  /// [data] - данные задачи в виде Map.
+  /// [documentId] - уникальный идентификатор документа в Firestore.
+  /// 
+  /// Возвращает объект `Task`.
   factory Task.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Task(
       id: documentId,
@@ -29,6 +55,9 @@ class Task {
     );
   }
 
+  /// Преобразует объект задачи в Map для отправки в базу данных.
+  /// 
+  /// Возвращает Map с данными задачи.
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -39,11 +68,16 @@ class Task {
     };
   }
 
+  /// Определяет текущий статус задачи в зависимости от времени.
+  /// 
+  /// [now] - текущее время.
+  /// 
+  /// Возвращает `TaskStatus` - актуальный статус задачи.
   TaskStatus determineStatus(DateTime now) {
     if (now.isAfter(endDate)) {
-      return TaskStatus.overdued;
+      return TaskStatus.overdued; // Задача просрочена
     } else {
-      return status;
+      return status; // Статус задачи, если не просрочена
     }
   }
 }

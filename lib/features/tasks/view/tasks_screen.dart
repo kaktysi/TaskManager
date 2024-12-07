@@ -1,14 +1,18 @@
 import 'dart:developer';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import 'package:task_manager/features/tasks/bloc/tasks_bloc.dart';
+import 'package:task_manager/features/tasks/tasks.dart';
 import 'package:task_manager/repositories/tasks/tasks.dart';
 
+/// Экран задач, отображающий список задач с возможностью фильтрации и сортировки.
+///
+/// Использует [Bloc] для управления состоянием задач и отображает список задач
+/// с возможностью сортировки, фильтрации по статусу и пометки задач как завершённых.
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -23,90 +27,30 @@ class _TasksScreenState extends State<TasksScreen> {
     GetIt.I<AbstractTasksRepository>(),
   );
 
+  /// Инициализация блока и загрузка задач.
   @override
   void initState() {
-    _taskBloc.add(LoadTasks());
-    _overdueCheck();
+    _taskBloc.add(LoadTasks()); // Загрузка всех задач
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // centerTitle: true,
-        elevation: 0,
-        title: const Text(
-          "Tasks",
-          style: TextStyle(
-            color: Color.fromRGBO(129, 170, 245, 1), // blue
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'log_out') {
-                // Логика для выхода из системы
-                await FirebaseAuth.instance.signOut();
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool(
-                    'isLoggedIn', false); // Убираем флаг авторизации
-                context.go('/login'); // Перенаправление на экран входа
-              } else if (value == 'theme') {}
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'theme',
-                child: Row(
-                  children: [
-                    Icon(Icons.circle_outlined, size: 18, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('Theme'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'log_out',
-                child: Row(
-                  children: [
-                    Icon(Icons.exit_to_app, size: 18, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('Log Out'),
-                  ],
-                ),
-              ),
-            ],
-            icon: const Icon(
-              Icons.settings,
-              size: 31,
-              color: Color.fromRGBO(239, 147, 162, 1), // Красный
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3.0),
-          child: Container(
-            color: const Color.fromARGB(129, 1, 170, 245),
-            height: 2.0,
-          ),
-        ),
-      ),
+      appBar: AppBarWidget(context), // Заголовок экрана
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: // Внутри Row, где находятся кнопки и фильтры
-                Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                // Выпадающий список для сортировки
+                // Выпадающий список для сортировки задач
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     setState(() {
-                      _taskBloc.add(
-                          LoadTasks(filter: value)); // Добавляем событие в Bloc
+                      _taskBloc.add(LoadTasks(
+                          filter: value)); // Применение выбранной сортировки
                     });
                   },
                   itemBuilder: (context) => [
@@ -123,39 +67,30 @@ class _TasksScreenState extends State<TasksScreen> {
                       child: Text('Sort by Creation Date'),
                     ),
                   ],
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.fromRGBO(153, 159, 249, 1), // purp
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: const Icon(
-                      Icons.filter_alt,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: const FilterWidget(), // Виджет для сортировки
                 ),
                 const SizedBox(width: 30),
                 // Фильтр по статусу задач
                 FilterStatusMenu(
                   onFilterChanged: (selectedStatuses) {
-                    _taskBloc
-                        .add(LoadTasksByStatus(statuses: selectedStatuses));
+                    _taskBloc.add(LoadTasksByStatus(
+                        statuses:
+                            selectedStatuses)); // Применение выбранных статусов
                   },
                 ),
                 const SizedBox(width: 30),
-                // Кнопка предупреждений
                 ElevatedButton(
                   onPressed: () {
                     final overdueTasks = taskList
                             ?.where(
                                 (task) => task.status == TaskStatus.overdued)
-                            .length ??
-                        0;
+                            .length ?? 0;
+
+                    // Отображение количества просроченных задач
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'You have $overdueTasks overdued tasks',
+                          'You have $overdueTasks overdue tasks',
                           style: const TextStyle(color: Colors.white),
                         ),
                         backgroundColor: Colors.red,
@@ -166,8 +101,8 @@ class _TasksScreenState extends State<TasksScreen> {
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(16),
-                    backgroundColor:
-                        const Color.fromRGBO(153, 159, 249, 1), // purp
+                    backgroundColor: const Color.fromRGBO(
+                        153, 159, 249, 1), // фиолетовый цвет
                   ),
                   child: const Icon(
                     Icons.warning,
@@ -181,17 +116,22 @@ class _TasksScreenState extends State<TasksScreen> {
             color: Color.fromARGB(129, 1, 170, 245),
             thickness: 2.0,
           ),
+          // Список задач с использованием блока состояния
           Expanded(
               child: BlocBuilder<TasksBloc, TasksBlocState>(
             bloc: _taskBloc,
             builder: (context, state) {
               if (state is TasksLoaded) {
+                taskList = state.taskList; // Загрузка списка задач
+                _overdueCheck();
                 return ListView.builder(
-                  itemCount: state.taskList.length,
+                  itemCount: state.taskList.length, // Количество задач в списке
                   itemBuilder: (context, index) {
+                    taskList = state.taskList;
                     final task = state.taskList[index];
                     final now = DateTime.now();
-                    final currentStatus = task.determineStatus(now);
+                    final currentStatus =
+                        task.determineStatus(now); // Определение статуса задачи
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
@@ -205,7 +145,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                task.title, // Имя таски
+                                task.title, // Имя задачи
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -233,7 +173,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              '${task.startDate.toLocal()} - ${task.endDate.toLocal()}', // Срок выполнения
+                              '${DateFormat('yyyy-MM-dd HH:mm').format(task.startDate.toLocal())} -\n${DateFormat('yyyy-MM-dd HH:mm').format(task.endDate.toLocal())}', // Даты начала и конца
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey,
@@ -245,10 +185,12 @@ class _TasksScreenState extends State<TasksScreen> {
                             color: Color.fromRGBO(239, 147, 162, 1), // красный
                           ),
                           trailing: IconButton(
-                            icon: _getButtonIcon(currentStatus),
+                            icon: _getButtonIcon(
+                                currentStatus), // Иконка в зависимости от статуса
                             onPressed: currentStatus == TaskStatus.completed
                                 ? null // Кнопка отключена, если задача завершена
-                                : () => _onButtonPressed(task),
+                                : () =>
+                                    _onButtonPressed(task), // Обработка нажатия
                             style: IconButton.styleFrom(
                               backgroundColor:
                                   currentStatus == TaskStatus.overdued
@@ -258,7 +200,8 @@ class _TasksScreenState extends State<TasksScreen> {
                                           : Colors.blueAccent,
                             ),
                           ),
-                          onTap: () => _navigate(context, task.id),
+                          onTap: () => _navigate(context,
+                              task.id), // Переход на страницу деталей задачи
                         ),
                       ),
                     );
@@ -286,7 +229,8 @@ class _TasksScreenState extends State<TasksScreen> {
                       const SizedBox(height: 30),
                       TextButton(
                         onPressed: () {
-                          _taskBloc.add(LoadTasks());
+                          _taskBloc.add(
+                              LoadTasks()); // Попробовать загрузить задачи снова
                         },
                         child: const Text('Try again'),
                       ),
@@ -294,30 +238,40 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                 );
               }
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                  child: CircularProgressIndicator()); // Индикатор загрузки
             },
           )),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                context.go("/task_add");
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                backgroundColor: const Color.fromRGBO(153, 159, 249, 1),
-              ),
-              child: const Text(
-                'Create Task',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
+          CreateButton(context) // Кнопка для создания новой задачи
         ],
       ),
     );
   }
 
+  /// Проверка на просроченные задачи.
+  /// Если задача просрочена, ее статус обновляется на "overdued".
+  void _overdueCheck()  {
+    final now = DateTime.now(); // Текущее время
+    if (taskList != null) {
+      for (var task in taskList!) {
+        if (task.endDate.isBefore(now) && task.status != TaskStatus.overdued) {
+          // Если задача просрочена, обновляем статус
+          final updatedTask = Task(
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            startDate: task.startDate,
+            endDate: task.endDate,
+            status: TaskStatus.overdued,
+          );
+          // Сохраняем обновление через репозиторий
+          GetIt.I<AbstractTasksRepository>().updateTask(updatedTask);
+        }
+      }
+    }
+  }
+
+  /// Возвращает цвет для отображения статуса задачи.
   Color _getStatusColor(TaskStatus status) {
     switch (status) {
       case TaskStatus.inProcess:
@@ -329,18 +283,19 @@ class _TasksScreenState extends State<TasksScreen> {
     }
   }
 
+  /// Возвращает иконку для кнопки в зависимости от статуса задачи.
   Icon _getButtonIcon(TaskStatus status) {
     switch (status) {
       case TaskStatus.completed:
         return const Icon(Icons.check, color: Colors.green);
       case TaskStatus.overdued:
-        return const Icon(Icons.warning, color: Colors.red);
-      case TaskStatus.inProcess:
+        return const Icon(Icons.restore_from_trash, color: Colors.red);
       default:
-        return const Icon(Icons.check, color: Colors.white);
+        return const Icon(Icons.pause, color: Colors.blueAccent);
     }
   }
 
+  /// Обрабатывает нажатие на кнопку для завершения или возобновления задачи.
   Future<void> _onButtonPressed(Task task) async {
     if (task.status == TaskStatus.inProcess) {
       task = Task(
@@ -356,32 +311,15 @@ class _TasksScreenState extends State<TasksScreen> {
     initState();
   }
 
-  Future<void> _navigate(BuildContext context, String taskId) async {
+  /// Навигация на экран деталей задачи.
+  Future<void> _navigate(context, taskId) async {
     final task = await GetIt.I<AbstractTasksRepository>().getTaskById(taskId);
+    
     if (task != null) {
       GoRouter.of(context)
           .go('/task_details', extra: task); // Переход с данными таски
     } else {
       log('Task not found');
-    }
-  }
-
-  void _overdueCheck() {
-    final now = DateTime.now(); // Текущее время
-    if (taskList != null) {
-      for (var task in taskList!) {
-        if (task.endDate.isBefore(now) && task.status != TaskStatus.overdued) {
-          final updatedTask = Task(
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            startDate: task.startDate,
-            endDate: task.endDate,
-            status: TaskStatus.overdued,
-          );
-          GetIt.I<AbstractTasksRepository>().updateTask(updatedTask);
-        }
-      }
     }
   }
 }
