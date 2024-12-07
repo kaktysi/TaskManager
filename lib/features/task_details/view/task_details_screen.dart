@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../repositories/tasks/tasks.dart';
 
+/// Экран для отображения и редактирования деталей задачи.
 class TaskDetailsScreen extends StatefulWidget {
+  /// Задача, детали которой нужно отобразить.
   final Task task;
 
   const TaskDetailsScreen({super.key, required this.task});
@@ -20,11 +22,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   late DateTime _endDate;
   late TaskStatus _status;
 
+  /// Репозиторий для работы с задачами.
   final _repository = GetIt.I<AbstractTasksRepository>();
 
   @override
   void initState() {
     super.initState();
+    // Инициализация контроллеров и значений для отображаемой задачи.
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
     _startDate = widget.task.startDate;
@@ -39,6 +43,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     super.dispose();
   }
 
+  /// Открывает диалог выбора даты и времени.
   Future<void> _pickDateTime({required bool isStart}) async {
     final pickedDate = await showDatePicker(
       context: context,
@@ -47,7 +52,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
+    if (pickedDate != null && mounted) {
       final pickedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(isStart ? _startDate : _endDate),
@@ -73,6 +78,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     }
   }
 
+  /// Обновляет задачу в репозитории.
   Future<void> _updateTask() async {
     if (_endDate.isBefore(_startDate)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +105,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     }
   }
 
+  /// Удаляет задачу из репозитория.
   Future<void> _deleteTask() async {
     await _repository.deleteTask(widget.task.id);
     if (mounted) {
@@ -127,17 +134,20 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Поле для ввода заголовка задачи.
             TextField(
               controller: _titleController,
               decoration: const InputDecoration(labelText: "Title"),
             ),
             const SizedBox(height: 16),
+            // Поле для ввода описания задачи.
             TextField(
               controller: _descriptionController,
               decoration: const InputDecoration(labelText: "Description"),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
+            // Строка с выбором времени начала и конца задачи.
             Row(
               children: [
                 Expanded(
@@ -171,6 +181,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Выпадающий список для выбора статуса задачи.
             DropdownButtonFormField<TaskStatus>(
               value: _status,
               decoration: const InputDecoration(labelText: "Status"),
@@ -189,6 +200,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               },
             ),
             const Spacer(),
+            // Кнопка для сохранения изменений.
             ElevatedButton(
               onPressed: _updateTask,
               child: const Text("Save Changes"),

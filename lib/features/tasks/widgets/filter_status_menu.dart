@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager/repositories/tasks/tasks.dart';
 
+/// Виджет фильтра задач по статусу.
+/// 
+/// Отображает меню с чекбоксами для выбора статусов задач, таких как "В процессе", "Завершено", "Просрочено".
+/// При изменении фильтра передает выбранные статусы в родительский виджет через [onFilterChanged].
 class FilterStatusMenu extends StatefulWidget {
+  /// Функция обратного вызова, которая будет вызвана при изменении выбранных фильтров.
+  /// Принимает список выбранных статусов задач.
   final Function(List<TaskStatus>) onFilterChanged;
 
+  /// Конструктор виджета. Принимает функцию для обработки изменений фильтра.
   const FilterStatusMenu({required this.onFilterChanged, super.key});
 
   @override
@@ -11,6 +18,7 @@ class FilterStatusMenu extends StatefulWidget {
 }
 
 class _FilterStatusMenuState extends State<FilterStatusMenu> {
+  // Список выбранных статусов задач
   final List<TaskStatus> selectedStatuses = [];
 
   @override
@@ -88,7 +96,7 @@ class _FilterStatusMenuState extends State<FilterStatusMenu> {
         ),
         padding: const EdgeInsets.all(16),
         child: const Icon(
-          Icons.filter_alt,
+          Icons.remove_red_eye,
           color: Colors.white,
         ),
       ),
