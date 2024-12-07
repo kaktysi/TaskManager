@@ -21,13 +21,6 @@ class NotificationService {
     final fcmToken = await _messaging.getToken();
     log("FCM Token: $fcmToken");
 
-    // Подписка на тему, связанную с email текущего пользователя.
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final sanitizedEmail = user.email!.replaceAll('.', '_').replaceAll('@', '_');
-      await _messaging.subscribeToTopic(sanitizedEmail);
-    }
-
     // Устанавливаем обработчик для получения уведомлений.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       log("Received notification: ${message.notification?.title}");
